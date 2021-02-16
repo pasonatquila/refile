@@ -136,9 +136,16 @@ module Refile
       end
 
       filename = Rack::Utils.unescape(request.path.split("/").last)
-      disposition = force_download?(params) ? "attachment" : "inline"
+      disposition = force_download?(params) ? "attachment; filename*=UTF-8''#{percent_escape(filename)}" : "inline"
 
       send_file path, filename: filename, disposition: disposition, type: ::File.extname(filename)
+    end
+
+    # https://github.com/rails/rails/pull/33829
+    def percent_escape(filename)
+      filename.gsub(/[^A-Za-z0-9!#$&+.^_`|~-]/) do |char|
+        char.bytes.map { |byte| "%%%02X" % byte }.join
+      end
     end
 
     def backend
